@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Cyberpunk</title>
+    <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        :root {
+            --bg: #05050a;
+            --card: rgba(10, 15, 20, 0.85);
+            --text: #e0f7fa;
+            --text-2: #80deea;
+            --text-3: #4dd0e1;
+            --border: #00f3ff;
+            --accent: #00f3ff;
+            --accent-glow: rgba(0, 243, 255, 0.4);
+            --sidebar-w: 250px;
+            --danger: #ff0055;
+            --success: #00ffaa;
+        }
+        body{font-family:'Courier New', Courier, monospace, system-ui, sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh;
+            background-image: linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;}
+        
+        .lang-toggle { position: fixed; top: 20px; right: 20px; z-index: 1000; display: flex; gap: 10px; }
+        .lang-btn { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 5px 15px; cursor: pointer; font-family: inherit; font-weight: bold; text-shadow: 0 0 5px var(--accent); transition: all 0.3s ease; }
+        .lang-btn.active, .lang-btn:hover { background: var(--accent); color: #000; box-shadow: 0 0 15px var(--accent); }
+
+        .login-view{min-height:100vh;display:flex;align-items:center;justify-content:center}
+        .login-card{width:100%;max-width:400px;padding:48px 40px;margin:20px;background:var(--card);backdrop-filter:blur(10px);border-radius:4px;border:1px solid var(--accent);box-shadow:0 0 20px var(--accent-glow);animation:fadeUp .5s ease both}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+        .login-card h1{text-align:center;font-size:22px;font-weight:700;margin-bottom:8px;color:var(--accent);text-shadow:0 0 10px var(--accent);}
+        .login-card p{text-align:center;font-size:14px;color:var(--text-2);margin-bottom:32px}
+        
+        .form-group{margin-bottom:20px}
+        .form-group label{display:block;font-size:13px;font-weight:bold;color:var(--accent);margin-bottom:8px;text-transform:uppercase;}
+        .input{width:100%;padding:12px 14px;font-size:14px;font-family:inherit;color:var(--accent);background:rgba(0, 243, 255, 0.05);border:1px solid var(--text-2);border-radius:4px;outline:none;transition:all .2s ease}
+        .input::placeholder{color:rgba(0, 243, 255, 0.3)}
+        .input:focus{border-color:var(--accent);box-shadow:0 0 10px var(--accent-glow);background:rgba(0, 243, 255, 0.1)}
+        textarea.input{resize:vertical;min-height:100px}
+        select.input{appearance:none;background-color:rgba(0,243,255,0.05);}
+        
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;font-size:13px;font-weight:bold;font-family:inherit;border:1px solid var(--accent);border-radius:4px;cursor:pointer;transition:all .2s ease;text-transform:uppercase;white-space:nowrap;background:transparent;color:var(--accent);}
+        .btn-primary{background:var(--accent);color:#000;box-shadow:0 0 10px var(--accent-glow);}
+        .btn-primary:hover:not(:disabled){background:transparent;color:var(--accent);box-shadow:0 0 20px var(--accent);}
+        .btn-primary:disabled{opacity:.6;cursor:not-allowed}
+        .btn-secondary:hover{background:var(--accent);color:#000;}
+        .btn-sm{padding:6px 12px;font-size:12px;}
+        .btn-danger{border-color:var(--danger);color:var(--danger);}
+        .btn-danger:hover{background:var(--danger);color:#000;box-shadow:0 0 15px var(--danger);}
+        .btn-success{border-color:var(--success);color:var(--success);}
+        .btn-success:hover{background:var(--success);color:#000;box-shadow:0 0 15px var(--success);}
+        .btn-full{width:100%;justify-content:center;padding:13px;font-size:15px}
+        .btn .spinner{display:none;width:16px;height:16px;border:2px solid rgba(0,0,0,.3);border-top-color:#000;border-radius:50%;animation:spin .6s linear infinite}
+        .btn.loading .btn-text{display:none}.btn.loading .spinner{display:block}
+        
+        .admin-panel{display:flex;min-height:100vh}
+        .sidebar{position:fixed;left:0;top:0;bottom:0;width:var(--sidebar-w);background:rgba(5, 5, 10, 0.95);border-right:1px solid var(--accent);color:var(--text);display:flex;flex-direction:column;z-index:100;transition:transform .3s ease;box-shadow:2px 0 15px var(--accent-glow);}
+        .sidebar-header{padding:24px 20px;border-bottom:1px solid rgba(0,243,255,.2)}
+        .sidebar-header h2{font-size:16px;font-weight:700;color:var(--accent);text-shadow:0 0 5px var(--accent);display:flex;align-items:center;gap:10px}
+        .sidebar-nav{flex:1;padding:12px 10px}
+        .nav-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:4px;font-size:14px;font-weight:bold;color:var(--text-2);cursor:pointer;transition:all .2s ease;margin-bottom:2px}
+        .nav-item:hover{background:rgba(0,243,255,.1);color:var(--accent);text-shadow:0 0 5px var(--accent);}
+        .nav-item.active{background:var(--accent);color:#000;box-shadow:0 0 10px var(--accent-glow);}
+        .sidebar-footer{padding:16px 10px;border-top:1px solid rgba(0,243,255,.2)}
+        
+        .main-wrap{flex:1;margin-left:var(--sidebar-w);display:flex;flex-direction:column;min-height:100vh}
+        .topbar{position:sticky;top:0;padding:16px 28px;background:rgba(5,5,10,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--accent);display:flex;align-items:center;justify-content:space-between;z-index:50;box-shadow:0 2px 10px var(--accent-glow);}
+        .topbar-title{font-size:18px;font-weight:700;color:var(--accent);text-shadow:0 0 5px var(--accent);}
+        .topbar-right{display:flex;align-items:center;gap:12px;margin-right:80px;}
+        .content{flex:1;padding:28px}
+        .view{display:none;animation:fadeUp .3s ease both}.view.active{display:block}
+        
+        .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px;margin-bottom:28px}
+        .stat-card{background:var(--card);backdrop-filter:blur(12px);border-radius:4px;padding:22px 20px;border:1px solid var(--accent);box-shadow:0 0 10px var(--accent-glow);border-left:3px solid var(--card-color,var(--accent));transition:all .2s ease}
+        .stat-card:hover{transform:translateY(-2px);box-shadow:0 0 20px var(--accent);}
+        .stat-card .num{font-size:28px;font-weight:800;color:var(--card-color,var(--accent));text-shadow:0 0 5px var(--card-color,var(--accent));}
+        .stat-card .label{font-size:13px;color:var(--text-2);margin-top:4px}
+        
+        .toolbar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+        .toolbar-space{flex:1}
+        .table-wrap{background:var(--card);border-radius:4px;border:1px solid var(--accent);box-shadow:0 0 15px var(--accent-glow);overflow:hidden}
+        .table-wrap table{width:100%;border-collapse:collapse}
+        .table-wrap th,.table-wrap td{padding:12px 16px;text-align:left;font-size:13px;border-bottom:1px solid rgba(0,243,255,.2)}
+        .table-wrap th{background:rgba(0,243,255,.1);font-weight:bold;color:var(--accent);text-transform:uppercase;}
+        .table-wrap tr:hover td{background:rgba(0,243,255,.05)}
+        .badge{display:inline-block;padding:3px 10px;border-radius:4px;font-size:12px;font-weight:bold;border:1px solid;}
+        .badge-active,.badge-used,.badge-success{color:var(--success);border-color:var(--success);background:rgba(0,255,170,.1);}
+        .badge-disabled,.badge-failed,.badge-full{color:var(--danger);border-color:var(--danger);background:rgba(255,0,85,.1);}
+        .badge-pending{color:#ffaa00;border-color:#ffaa00;background:rgba(255,170,0,.1);}
+        .badge-unused{color:var(--accent);border-color:var(--accent);background:rgba(0,243,255,.1);}
+        
+        .modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s ease}
+        .modal-mask.show{opacity:1;pointer-events:auto}
+        .modal{background:var(--card);border:1px solid var(--accent);box-shadow:0 0 30px var(--accent-glow);border-radius:4px;padding:32px;width:90%;max-width:480px;transform:scale(.95);transition:transform .25s ease}
+        .modal-mask.show .modal{transform:scale(1)}
+        .modal h3{font-size:18px;font-weight:bold;color:var(--accent);margin-bottom:20px;text-transform:uppercase;text-shadow:0 0 5px var(--accent);}
+        .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
+        
+        .toast-container{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px}
+        .toast{padding:12px 20px;border-radius:4px;font-size:13px;font-weight:bold;transform:translateX(120%);transition:transform .3s ease;border:1px solid;}
+        .toast.show{transform:translateX(0)}
+        .toast-ok{background:rgba(0,255,170,.1);color:var(--success);border-color:var(--success);text-shadow:0 0 5px var(--success);}
+        .toast-err{background:rgba(255,0,85,.1);color:var(--danger);border-color:var(--danger);text-shadow:0 0 5px var(--danger);}
+        
+        .footer-note { text-align: center; margin-top: 20px; font-size: 14px; color: var(--accent); font-weight: bold; text-shadow: 0 0 5px var(--accent); padding-bottom:20px;}
+    </style>
+</head>
+<body>
+    <div class="lang-toggle">
+        <button class="lang-btn active" onclick="switchLang('en')" id="btn-en">EN</button>
+        <button class="lang-btn" onclick="switchLang('id')" id="btn-id">ID</button>
+    </div>
+
+    <div id="loginView" class="login-view">
+        <div class="login-card">
+            <h1 data-en="SYSTEM ADMIN" data-id="ADMIN SISTEM">SYSTEM ADMIN</h1>
+            <p data-en="Enter access credential" data-id="Masukkan kredensial akses">Enter access credential</p>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginPwd" data-en="Password" data-id="Kata Sandi">Password</label>
+                    <input type="password" id="loginPwd" class="input" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full" id="loginBtn">
+                    <span class="btn-text" data-en="INITIALIZE" data-id="INISIALISASI">INITIALIZE</span>
+                    <div class="spinner"></div>
+                </button>
+            </form>
+            <div id="loginMsg" style="margin-top:16px;font-size:13px;color:var(--danger);text-align:center;display:none;text-shadow:0 0 5px var(--danger);"></div>
+            <div class="footer-note">Modded by t.me/premium2in</div>
+        </div>
+    </div>
+
+    <div id="adminPanel" class="admin-panel" style="display:none">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header"><h2>// ADMIN</h2></div>
+            <nav class="sidebar-nav">
+                <div class="nav-item active" data-view="dashboard" data-en="Dashboard" data-id="Dasbor">Dashboard</div>
+                <div class="nav-item" data-view="tokens" data-en="Token Management" data-id="Manajemen Token">Token Management</div>
+                <div class="nav-item" data-view="codes" data-en="Code Management" data-id="Manajemen Kode">Code Management</div>
+                <div class="nav-item" data-view="records" data-en="Invite Records" data-id="Rekam Jejak">Invite Records</div>
+                <div class="nav-item" data-view="settings" data-en="Settings" data-id="Pengaturan">Settings</div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="nav-item" onclick="location.href='/'" data-en="Exit to Matrix" data-id="Keluar ke Matriks">Exit to Matrix</div>
+            </div>
+        </aside>
+        <div class="main-wrap">
+            <header class="topbar">
+                <div style="display:flex;align-items:center;gap:12px">
+                    <span class="topbar-title" id="pageTitle">Dashboard</span>
+                </div>
+                <div class="topbar-right">
+                    <button class="btn btn-secondary btn-sm" id="refreshBtn" data-en="Sync" data-id="Sinkron">Sync</button>
+                    <button class="btn btn-danger btn-sm" id="logoutBtn" data-en="Disconnect" data-id="Putus Koneksi">Disconnect</button>
+                </div>
+            </header>
+            <div class="content">
+                <section id="viewDashboard" class="view active"><div class="stats-grid" id="statsGrid"></div></section>
+
+                <section id="viewTokens" class="view">
+                    <div class="toolbar"><div class="toolbar-space"></div><button class="btn btn-primary btn-sm" id="btnAddToken" data-en="Inject Token" data-id="Injeksi Token">Inject Token</button></div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>ID</th><th data-en="Label" data-id="Label">Label</th><th data-en="Email" data-id="Email">Email</th><th data-en="Status" data-id="Status">Status</th><th data-en="Seats" data-id="Kursi">Seats</th><th data-en="Expiry" data-id="Kedaluwarsa">Expiry</th><th data-en="Action" data-id="Aksi">Action</th></tr></thead>
+                            <tbody id="tokensBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="viewCodes" class="view">
+                    <div class="toolbar">
+                        <input type="text" class="input" id="codeSearch" style="width:200px" placeholder="Search...">
+                        <div class="toolbar-space"></div>
+                        <button class="btn btn-secondary btn-sm" id="btnImport" data-en="Import Codes" data-id="Impor Kode">Import Codes</button>
+                        <button class="btn btn-primary btn-sm" id="btnGenerate" data-en="Generate Codes" data-id="Buat Kode">Generate Codes</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>ID</th><th data-en="Code" data-id="Kode">Code</th><th data-en="Status" data-id="Status">Status</th><th data-en="Usage" data-id="Pemakaian">Usage</th><th data-en="User" data-id="Pengguna">User</th><th data-en="Time" data-id="Waktu">Time</th><th data-en="Action" data-id="Aksi">Action</th></tr></thead>
+                            <tbody id="codesBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="viewRecords" class="view">
+                    <div class="toolbar">
+                        <input type="text" class="input" id="recordEmail" style="width:200px" placeholder="Search Email...">
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>ID</th><th>Email</th><th data-en="Code" data-id="Kode">Code</th><th data-en="Status" data-id="Status">Status</th><th>IP</th><th data-en="Time" data-id="Waktu">Time</th></tr></thead>
+                            <tbody id="recordsBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="viewSettings" class="view">
+                    <div style="max-width: 500px">
+                        <h3 style="color:var(--accent);margin-bottom:20px;text-shadow:0 0 5px var(--accent);" data-en="System Config" data-id="Konfigurasi Sistem">System Config</h3>
+                        <div class="form-group"><label data-en="IP Cooldown (s)" data-id="Waktu Tunggu IP (d)">IP Cooldown (s)</label><input type="number" class="input" id="setIpCooldown"></div>
+                        <div class="form-group"><label data-en="Default Redeem Limit" data-id="Batas Penebusan Default">Default Redeem Limit</label><input type="number" class="input" id="setDefaultLimit"></div>
+                        <button class="btn btn-primary" id="btnSaveSettings" data-en="Save Config" data-id="Simpan Konfig">Save Config</button>
+                    </div>
+                </section>
+                <div class="footer-note">Modded by t.me/premium2in</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-mask" id="tokenModal">
+        <div class="modal">
+            <h3 data-en="Inject Token" data-id="Injeksi Token">Inject Token</h3>
+            <div class="form-group"><label>JWT Token</label><textarea class="input" id="tokenInput"></textarea></div>
+            <div class="form-group"><label data-en="Label" data-id="Label">Label</label><input type="text" class="input" id="tokenLabel"></div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal('tokenModal')" data-en="Cancel" data-id="Batal">Cancel</button>
+                <button class="btn btn-primary" id="btnDoAddToken" data-en="Execute" data-id="Eksekusi">Execute</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-mask" id="generateModal">
+        <div class="modal">
+            <h3 data-en="Generate Codes" data-id="Buat Kode">Generate Codes</h3>
+            <div class="form-group"><label data-en="Amount" data-id="Jumlah">Amount</label><input type="number" class="input" id="genCount" value="10"></div>
+            <div class="form-group"><label data-en="Prefix" data-id="Awalan">Prefix</label><input type="text" class="input" id="genPrefix" value="TEAM"></div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal('generateModal')" data-en="Cancel" data-id="Batal">Cancel</button>
+                <button class="btn btn-primary" id="btnDoGenerate" data-en="Execute" data-id="Eksekusi">Execute</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-mask" id="importModal">
+        <div class="modal">
+            <h3 data-en="Import Codes" data-id="Impor Kode">Import Codes</h3>
+            <div class="form-group"><label data-en="Code List (One per line)" data-id="Daftar Kode (Satu per baris)">Code List</label><textarea class="input" id="importCodes" style="height:150px;"></textarea></div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal('importModal')" data-en="Cancel" data-id="Batal">Cancel</button>
+                <button class="btn btn-primary" id="btnDoImport" data-en="Execute" data-id="Eksekusi">Execute</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+    const $ = id => document.getElementById(id);
+    let lang = 'en';
+    
+    const i18n = {
+        en: { 
+            dashboard: 'Dashboard', tokens: 'Token Management', codes: 'Code Management', records: 'Invite Records', settings: 'Settings',
+            total_codes: 'Total Codes', unused: 'Unused', used: 'Used', pending: 'Pending', disabled: 'Disabled', 
+            success: 'Success', failed: 'Failed', total_records: 'Total Records', active: 'Active Tokens', full: 'Full Tokens',
+            empty: 'No Data', expired: 'Expired', refresh: 'Sync', enable: 'Enable', disable: 'Disable', delete: 'Delete'
+        },
+        id: { 
+            dashboard: 'Dasbor', tokens: 'Manajemen Token', codes: 'Manajemen Kode', records: 'Rekam Jejak', settings: 'Pengaturan',
+            total_codes: 'Total Kode', unused: 'Belum Dipakai', used: 'Terpakai', pending: 'Tertunda', disabled: 'Dinonaktifkan', 
+            success: 'Berhasil', failed: 'Gagal', total_records: 'Total Rekam', active: 'Token Aktif', full: 'Token Penuh',
+            empty: 'Tidak Ada Data', expired: 'Kedaluwarsa', refresh: 'Sinkron', enable: 'Aktifkan', disable: 'Matikan', delete: 'Hapus'
+        }
+    };
+
+    function t(key) { return i18n[lang][key] || key; }
+
+    function switchLang(l) {
+        lang = l;
+        $('btn-en').classList.toggle('active', l === 'en');
+        $('btn-id').classList.toggle('active', l === 'id');
+        document.querySelectorAll('[data-en]').forEach(el => { el.textContent = el.getAttribute(`data-${l}`); });
+        $('pageTitle').textContent = t(currentView);
+        loadView(); // Refresh data with new language
+    }
+
+    let currentView = 'dashboard';
+
+    function esc(s) { return s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function toast(msg, ok=true) { const el=document.createElement('div'); el.className=`toast toast-${ok?'ok':'err'}`; el.textContent=msg; $('toastContainer').appendChild(el); requestAnimationFrame(()=>el.classList.add('show')); setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),300)},3000); }
+
+    // Mock API logic for UI demo purpose if real backend not present, normally uses fetch
+    async function api(path, opts={}) {
+        const resp = await fetch('/admin/api'+path, {headers:{'Content-Type':'application/json'}, ...opts});
+        if (resp.status===401) { $('adminPanel').style.display='none'; $('loginView').style.display=''; toast('Session Expired',false); throw new Error('Unauthorized'); }
+        return resp.json();
+    }
+
+    $('loginForm').addEventListener('submit', async e => {
+        e.preventDefault(); const btn=$('loginBtn'), msg=$('loginMsg');
+        btn.classList.add('loading'); btn.disabled=true; msg.style.display='none';
+        try {
+            const data = await api('/login', {method:'POST', body:JSON.stringify({password:$('loginPwd').value})});
+            if (data.success) { $('loginView').style.display='none'; $('adminPanel').style.display=''; loadView(); }
+            else { msg.textContent=data.message; msg.style.display=''; }
+        } catch(err) { if(err.message!=='Unauthorized'){msg.textContent='Network Error';msg.style.display='';} }
+        finally { btn.classList.remove('loading'); btn.disabled=false; }
+    });
+
+    document.querySelectorAll('.nav-item[data-view]').forEach(el=>{
+        el.addEventListener('click',()=>{
+            document.querySelectorAll('.nav-item[data-view]').forEach(n=>n.classList.remove('active')); el.classList.add('active');
+            currentView=el.dataset.view; $('pageTitle').textContent=t(currentView);
+            document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+            $('view'+currentView.charAt(0).toUpperCase()+currentView.slice(1)).classList.add('active');
+            loadView();
+        });
+    });
+
+    $('refreshBtn').addEventListener('click', loadView);
+
+    function loadView() {
+        ({dashboard:loadStats, tokens:loadTokens, codes:loadCodes, records:loadRecords, settings:loadSettings})[currentView]?.();
+    }
+
+    async function loadStats() {
+        try {
+            const d = await api('/stats');
+            const c=d.codes, r=d.records, tkn=d.tokens;
+            $('statsGrid').innerHTML = [
+                ['var(--accent)',c.total,t('total_codes')],['var(--accent)',c.unused,t('unused')],['var(--success)',c.used,t('used')],['#ffaa00',c.pending,t('pending')],['var(--danger)',c.disabled,t('disabled')],
+                ['var(--success)',r.success,t('success')],['var(--danger)',r.failed,t('failed')],['var(--accent)',r.total,t('total_records')],
+                ['var(--success)',tkn.active,t('active')],['var(--danger)',tkn.full_count,t('full')],
+            ].map(([color,num,label])=>`<div class="stat-card" style="--card-color:${color}"><div class="num">${num}</div><div class="label">${esc(label)}</div></div>`).join('');
+        } catch{}
+    }
+
+    async function loadTokens() {
+        try {
+            const d = await api('/tokens');
+            const body = $('tokensBody');
+            if(!d.items.length){ body.innerHTML=`<tr><td colspan="7" style="text-align:center">${t('empty')}</td></tr>`; return; }
+            body.innerHTML = d.items.map(r=>{
+                const exp = r.exp ? (r.exp < Date.now()/1000 ? `<span style="color:var(--danger)">${t('expired')}</span>` : new Date(r.exp*1000).toLocaleDateString()) : '-';
+                return `<tr>
+                    <td>${r.id}</td><td>${esc(r.label||'-')}</td><td>${esc(r.email||'-')}</td>
+                    <td><span class="badge badge-${esc(r.status)}">${esc(r.status)}</span></td>
+                    <td>${r.seat_used} / ${r.seat_limit||'?'}</td><td>${exp}</td>
+                    <td><button class="btn btn-secondary btn-sm" onclick="alert('Demo Action')">${t('refresh')}</button></td>
+                </tr>`;
+            }).join('');
+        } catch{}
+    }
+
+    async function loadCodes() {
+        try {
+            const d = await api('/codes?per_page=20');
+            const body = $('codesBody');
+            if(!d.items.length){ body.innerHTML=`<tr><td colspan="7" style="text-align:center">${t('empty')}</td></tr>`; return; }
+            body.innerHTML=d.items.map(r=>`<tr>
+                <td>${r.id}</td><td>${esc(r.code)}</td>
+                <td><span class="badge badge-${esc(r.status)}">${esc(r.status)}</span></td>
+                <td>${r.use_count} / ${r.max_uses}</td><td>${esc(r.used_by_email||'-')}</td>
+                <td>${new Date(r.created_at).toLocaleDateString()}</td>
+                <td>-</td></tr>`).join('');
+        } catch{}
+    }
+
+    async function loadRecords() {
+        try {
+            const d = await api('/records?per_page=20');
+            const body = $('recordsBody');
+            if(!d.items.length){ body.innerHTML=`<tr><td colspan="6" style="text-align:center">${t('empty')}</td></tr>`; return; }
+            body.innerHTML=d.items.map(r=>`<tr>
+                <td>${r.id}</td><td>${esc(r.email)}</td><td>${esc(r.code||'-')}</td>
+                <td><span class="badge badge-${esc(r.invite_status)}">${esc(r.invite_status)}</span></td>
+                <td>${esc(r.client_ip||'-')}</td><td>${new Date(r.created_at).toLocaleDateString()}</td></tr>`).join('');
+        } catch{}
+    }
+
+    async function loadSettings() {
+        try { const d=await api('/settings'); $('setIpCooldown').value=d.ip_cooldown||3600; $('setDefaultLimit').value=d.default_redeem_limit||1; } catch{}
+    }
+
+    function openModal(id){$(id).classList.add('show');}
+    function closeModal(id){$(id).classList.remove('show');}
+
+    $('btnAddToken').addEventListener('click',()=>openModal('tokenModal'));
+    $('btnGenerate').addEventListener('click',()=>openModal('generateModal'));
+    $('btnImport').addEventListener('click',()=>openModal('importModal'));
+
+    switchLang('en');
+    </script>
+</body>
+</html>

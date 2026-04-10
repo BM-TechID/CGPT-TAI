@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banner Team Auto Invite</title>
+    <meta name="description" content="Enter email to get ChatGPT Team seat invite">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-blue-glow: rgba(0, 243, 255, 0.6);
+            --dark-bg: #05050a;
+            --card-bg: rgba(10, 15, 20, 0.85);
+            --text-main: #e0f7fa;
+            --text-dim: #80deea;
+            --danger: #ff0055;
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace, system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--dark-bg);
+            color: var(--text-main);
+            -webkit-font-smoothing: antialiased;
+            background-image: 
+                linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            overflow-x: hidden;
+        }
+
+        /* Scanline effect */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            z-index: 999;
+            pointer-events: none;
+        }
+
+        .lang-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+        }
+        .lang-btn {
+            background: transparent;
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+            padding: 5px 15px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            text-shadow: 0 0 5px var(--neon-blue);
+            box-shadow: inset 0 0 5px var(--neon-blue-glow);
+            transition: all 0.3s ease;
+        }
+        .lang-btn.active, .lang-btn:hover {
+            background: var(--neon-blue);
+            color: #000;
+            box-shadow: 0 0 15px var(--neon-blue);
+        }
+
+        .card {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 440px;
+            padding: 48px 40px;
+            margin: 20px;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--neon-blue);
+            box-shadow: 0 0 20px var(--neon-blue-glow), inset 0 0 10px var(--neon-blue-glow);
+            border-radius: 4px;
+        }
+
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--neon-blue);
+            text-shadow: 0 0 10px var(--neon-blue);
+            text-transform: uppercase;
+        }
+        .header p { font-size: 14px; color: var(--text-dim); }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: bold;
+            color: var(--neon-blue);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        
+        .input-wrap input, .input-wrap select {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 15px;
+            font-family: inherit;
+            color: var(--neon-blue);
+            background: rgba(0, 243, 255, 0.05);
+            border: 1px solid var(--text-dim);
+            border-radius: 4px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        .input-wrap input::placeholder { color: rgba(0, 243, 255, 0.3); }
+        .input-wrap input:focus, .input-wrap select:focus {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 10px var(--neon-blue-glow);
+            background: rgba(0, 243, 255, 0.1);
+        }
+        .input-wrap select option {
+            background: var(--dark-bg);
+            color: var(--neon-blue);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            font-family: inherit;
+            color: #000;
+            background: var(--neon-blue);
+            border: 1px solid var(--neon-blue);
+            box-shadow: 0 0 15px var(--neon-blue-glow);
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+        .btn-submit:hover:not(:disabled) {
+            background: transparent;
+            color: var(--neon-blue);
+            box-shadow: 0 0 25px var(--neon-blue);
+        }
+        .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-submit .spinner {
+            display: none; width: 18px; height: 18px;
+            border: 2px solid transparent; border-top-color: #000;
+            border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto;
+        }
+        .btn-submit.loading .btn-text { display: none; }
+        .btn-submit.loading .spinner { display: block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .message {
+            margin-top: 20px; padding: 12px 16px; border-radius: 4px; font-size: 13px;
+            font-weight: bold; display: none; text-align: center;
+        }
+        .message.success { display: block; background: rgba(0, 243, 255, 0.1); color: var(--neon-blue); border: 1px solid var(--neon-blue); text-shadow: 0 0 5px var(--neon-blue); }
+        .message.error { display: block; background: rgba(255, 0, 85, 0.1); color: var(--danger); border: 1px solid var(--danger); text-shadow: 0 0 5px var(--danger); }
+
+        /* Receipt Section */
+        #receipt-container {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px dashed var(--neon-blue);
+            background: rgba(0, 243, 255, 0.03);
+            position: relative;
+        }
+        #receipt-container h3 { color: var(--neon-blue); margin-bottom: 10px; font-size: 16px; text-transform: uppercase; }
+        .receipt-data { font-size: 13px; line-height: 1.6; color: var(--text-main); white-space: pre-wrap; margin-bottom: 15px; }
+        .warranty-note { color: var(--danger); font-size: 12px; font-weight: bold; text-shadow: 0 0 5px var(--danger); margin-bottom: 15px; }
+        .receipt-actions { display: flex; gap: 10px; }
+        .btn-action {
+            flex: 1; padding: 8px; font-size: 12px; cursor: pointer;
+            background: transparent; color: var(--neon-blue);
+            border: 1px solid var(--neon-blue); font-family: inherit; font-weight: bold;
+            transition: all 0.2s; text-align: center; text-decoration: none; display: inline-block;
+        }
+        .btn-action:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 10px var(--neon-blue); }
+
+        .footer-note {
+            text-align: center; margin-top: 28px; font-size: 14px;
+            color: var(--neon-blue); font-weight: bold; text-shadow: 0 0 5px var(--neon-blue);
+        }
+    </style>
+</head>
+<body>
+    <div class="lang-toggle">
+        <button class="lang-btn active" onclick="setLang('en')" id="btn-en">EN</button>
+        <button class="lang-btn" onclick="setLang('id')" id="btn-id">ID</button>
+    </div>
+
+    <div class="card">
+        <div class="header">
+            <h1 data-en="Banner Team Auto Invite" data-id="Banner Team Auto Invite">Banner Team Auto Invite</h1>
+            <p data-en="Enter email and redeem code for Team seat invite" data-id="Masukkan email dan kode untuk undangan Team">Enter email and redeem code for Team seat invite</p>
+        </div>
+        <form id="inviteForm">
+            <div class="form-group">
+                <label for="workspaceInput" data-en="Workspace" data-id="Ruang Kerja">Workspace</label>
+                <div class="input-wrap">
+                    <select id="workspaceInput" name="workspace" required>
+                        <option value="ChatGPT 5.0 Pro">ChatGPT 5.0 Pro</option>
+                        <option value="ChatGPT Pro Invite">ChatGPT Pro Invite</option>
+                        <option value="ChatGPT Bisnis">ChatGPT Bisnis</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="emailInput" data-en="Email Address" data-id="Alamat Email">Email Address</label>
+                <div class="input-wrap">
+                    <input type="email" id="emailInput" name="email" data-ph-en="your@email.com" data-ph-id="email@anda.com" placeholder="your@email.com" required autocomplete="email">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="codeInput" data-en="Redeem Code" data-id="Kode Penebusan">Redeem Code</label>
+                <div class="input-wrap">
+                    <input type="text" id="codeInput" name="code" data-ph-en="TEAM-XXXXXXXXXX" data-ph-id="TEAM-XXXXXXXXXX" placeholder="TEAM-XXXXXXXXXX" required autocomplete="one-time-code">
+                </div>
+            </div>
+            <button type="submit" class="btn-submit" id="submitBtn">
+                <span class="btn-text" data-en="Redeem Now" data-id="Tebus Sekarang">Redeem Now</span>
+                <div class="spinner"></div>
+            </button>
+        </form>
+        <div id="message" class="message"></div>
+
+        <div id="receipt-container">
+            <h3 data-en="--- REDEMPTION RECEIPT ---" data-id="--- STRUK PENEBUSAN ---">--- REDEMPTION RECEIPT ---</h3>
+            <div id="receipt-data" class="receipt-data"></div>
+            <div class="warranty-note" data-en="* Save this as warranty proof" data-id="* Simpan sebagai bukti garansi">* Save this as warranty proof</div>
+            <div class="receipt-actions">
+                <a href="#" id="btn-wa" class="btn-action" target="_blank">WhatsApp</a>
+                <a href="#" id="btn-tele" class="btn-action" target="_blank">Telegram</a>
+                <button id="btn-download" class="btn-action" onclick="downloadReceipt()" data-en="Download" data-id="Unduh">Download</button>
+            </div>
+        </div>
+
+        <p class="footer-note">Modded by t.me/premium2in</p>
+    </div>
+
+    <script>
+        const $ = id => document.getElementById(id);
+        let currentLang = 'en';
+        let rawReceiptText = '';
+
+        function setLang(lang) {
+            currentLang = lang;
+            $('btn-en').classList.toggle('active', lang === 'en');
+            $('btn-id').classList.toggle('active', lang === 'id');
+            
+            document.querySelectorAll('[data-en]').forEach(el => {
+                el.textContent = el.getAttribute(`data-${lang}`);
+            });
+            document.querySelectorAll('[data-ph-en]').forEach(el => {
+                el.setAttribute('placeholder', el.getAttribute(`data-ph-${lang}`));
+            });
+        }
+
+        function generateReceipt(email, code, workspace) {
+            const dateStr = new Date().toLocaleString(currentLang === 'id' ? 'id-ID' : 'en-US');
+            const statusStr = currentLang === 'id' ? 'BERHASIL' : 'SUCCESS';
+            const warrantyStr = currentLang === 'id' ? '* Simpan sebagai bukti garansi' : '* Save this as warranty proof';
+            
+            rawReceiptText = `=== SYSTEM RECEIPT ===\nWorkspace : ${workspace}\nEmail     : ${email}\nCode      : ${code}\nDate      : ${dateStr}\nStatus    : ${statusStr}\n\n${warrantyStr}\nModded by t.me/premium2in\n======================`;
+            
+            $('receipt-data').textContent = rawReceiptText;
+            
+            const encodedText = encodeURIComponent(rawReceiptText);
+            $('btn-wa').href = `https://api.whatsapp.com/send?text=${encodedText}`;
+            $('btn-tele').href = `https://t.me/share/url?url=${encodeURIComponent('https://t.me/premium2in')}&text=${encodedText}`;
+            
+            $('receipt-container').style.display = 'block';
+        }
+
+        function downloadReceipt() {
+            const blob = new Blob([rawReceiptText], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Receipt_${Date.now()}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+        }
+
+        $('inviteForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const email = $('emailInput').value.trim();
+            const code = $('codeInput').value.trim();
+            const workspace = $('workspaceInput').value;
+            if (!email || !code) return;
+
+            const submitBtn = $('submitBtn');
+            const messageEl = $('message');
+            $('receipt-container').style.display = 'none';
+
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+            messageEl.className = 'message';
+
+            try {
+                const resp = await fetch('/api/redeem', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, code, workspace }),
+                });
+                const data = await resp.json();
+                messageEl.textContent = data.message;
+                messageEl.className = 'message ' + (data.success ? 'success' : 'error');
+                
+                if (data.success) {
+                    generateReceipt(email, code, workspace);
+                    $('emailInput').value = '';
+                    $('codeInput').value = '';
+                }
+            } catch {
+                messageEl.textContent = currentLang === 'id' ? 'Permintaan jaringan gagal, coba lagi nanti' : 'Network request failed, please try again';
+                messageEl.className = 'message error';
+            } finally {
+                submitBtn.classList.remove('loading');
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Initialize default language
+        setLang('en');
+    </script>
+</body>
+</html>
