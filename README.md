@@ -1,0 +1,2 @@
+# CGPT-TAI
+ChatGPT-TeamAutoInvite
