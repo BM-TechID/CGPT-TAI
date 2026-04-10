@@ -31,7 +31,7 @@ app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 OAI_CLIENT_VERSION = os.getenv(
     "OAI_CLIENT_VERSION", "prod-eddc2f6ff65fee2d0d6439e379eab94fe3047f72"
 )
-PORT = int(os.getenv("PORT", "8080"))
+PORT = int(os.getenv("PORT", "1234"))
 BASE_URL = "https://chatgpt.com/backend-api"
 DATABASE_PATH = os.getenv("DATABASE_PATH", "data/team_auto_invite.db")
 PENDING_TTL_SECONDS = int(os.getenv("REDEEM_PENDING_TTL_SECONDS", "300"))
